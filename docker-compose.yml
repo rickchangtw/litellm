@@ -1,0 +1,30 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: litellm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  litellm-proxy:
+    image: ghcr.io/berriai/litellm-database:main-latest
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/litellm
+      - LITELLM_MASTER_KEY=sk-1234
+      - UI_USERNAME=admin
+      - UI_PASSWORD=admin
+    depends_on:
+      - postgres
+    command: --config /app/config.yaml
+
+volumes:
+  postgres_data: 
