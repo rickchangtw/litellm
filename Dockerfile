@@ -1,24 +1,32 @@
-# Build from litellm pip package
-FROM cgr.dev/chainguard/python:latest-dev
+# 使用 Python 3.9 slim 版本作為基礎映像
+FROM python:3.9-slim
 
-USER root
+# 設置工作目錄
 WORKDIR /app
 
-ENV HOME=/home/litellm
-ENV PATH="${HOME}/venv/bin:$PATH"
+# 安裝系統依賴
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install runtime dependencies
-RUN apk update && \
-    apk add --no-cache gcc python3-dev openssl openssl-dev
-
-RUN python -m venv ${HOME}/venv
-RUN ${HOME}/venv/bin/pip install --no-cache-dir --upgrade pip
-
+# 複製依賴文件
 COPY requirements.txt .
-RUN --mount=type=cache,target=${HOME}/.cache/pip \
-    ${HOME}/venv/bin/pip install -r requirements.txt
 
-EXPOSE 4000/tcp
+# 安裝 Python 依賴
+RUN pip install --no-cache-dir -r requirements.txt
 
+# 複製應用程序代碼
+COPY . .
+
+# 設置環境變數
+ENV PYTHONUNBUFFERED=1
+ENV PORT=4000
+
+# 暴露端口
+EXPOSE 4000
+
+# 啟動命令
 ENTRYPOINT ["litellm"]
-CMD ["--port", "4000"]
+CMD ["--port", "4000"] 
